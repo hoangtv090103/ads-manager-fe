@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./styles.css">
+    <script src="./js/auth.js"></script>
     <style>
         body {
             margin: 0;
@@ -141,6 +142,47 @@
             color: #4F4F4F;
             cursor: pointer;
         }
+
+        .url-group {
+            margin-bottom: 16px;
+        }
+
+        .url-input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .condition-select {
+            width: 100px;
+        }
+
+        .behavior-options {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .behavior-item {
+            border: 1px solid #E0E0E0;
+            border-radius: 4px;
+            padding: 16px;
+        }
+
+        .sub-options {
+            margin-left: 24px;
+            margin-top: 8px;
+            color: #828282;
+        }
+
+        .sub-options.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .option-item {
+            margin: 8px 0;
+        }
     </style>
 </head>
 
@@ -222,12 +264,29 @@
                     <a href="/frontend/ad-zones.html">• Danh sách vùng QC</a>
                 </div>
             </div>
+            <a href="/frontend/accounts.html" class="nav-item">
+                <i class="fas fa-user-shield"></i>
+                <span>Quản lý phân quyền</span>
+            </a>
         </nav>
     </div>
     <div class="main-content">
-        <div class="header">
-            <h1>Danh sách nhóm đối tượng</h1>
+        <!-- Header -->
+        <div class="header-content">
+            <div class="breadcrumb">
+                <i class="fas fa-users"></i>
+                <span>/ Quản lý đối tượng</span>
+            </div>
+            <div class="user-info">
+                <div class="user-details">
+                    <div class="user-name">BA team</div>
+                    <div class="user-email">bateam@gmail.com</div>
+                </div>
+                <img src="../assets/avatar.jpg" alt="User Avatar" class="user-avatar">
+            </div>
         </div>
+
+        <h1 class="page-title">Danh sách nhóm đối tượng</h1>
 
         <div class="action-bar">
             <button class="btn-primary">
@@ -266,9 +325,19 @@
     <script>
         const baseUrl = 'http://127.0.0.1:5000/api/v1';
 
+        document.addEventListener('DOMContentLoaded', function() {
+            requireAuth();
+            loadTargetAudiences();
+        });
+
         async function loadTargetAudiences() {
             try {
-                const response = await fetch(`${baseUrl}/target-audiences`);
+                const response = await fetchWithAuth(`${baseUrl}/target-audiences`);
+
+                if (!response.ok) {
+                    throw new Error('Không thể tải dữ liệu đối tượng');
+                }
+
                 const result = await response.json();
 
                 if (result.status === "success") {
@@ -276,7 +345,12 @@
                     updateTotalCount(result.data.length);
                 }
             } catch (error) {
-                console.error('Error loading target audiences:', error);
+                console.error('Error:', error);
+                if (error.message === 'Unauthorized') {
+                    window.location.href = '/frontend/login.html';
+                } else {
+                    alert('Đã xảy ra lỗi khi tải dữ liệu');
+                }
             }
         }
 
@@ -330,19 +404,19 @@
         async function deleteTargetAudience(ta_id) {
             if (confirm('Bạn có chắc chắn muốn xóa nhóm đối tượng này?')) {
                 try {
-                    const response = await fetch(`${baseUrl}/target-audiences/${ta_id}`, {
+                    const response = await fetchWithAuth(`${baseUrl}/target-audiences/${ta_id}`, {
                         method: 'DELETE'
                     });
 
-                    if (response.ok) {
-                        alert('Xóa nhóm đối tượng thành công!');
-                        loadTargetAudiences();
-                    } else {
-                        throw new Error('Failed to delete target audience');
+                    if (!response.ok) {
+                        throw new Error('Không thể xóa nhóm đối tượng');
                     }
+
+                    alert('Xóa nhóm đối tượng thành công!');
+                    loadTargetAudiences();
                 } catch (error) {
                     console.error('Error:', error);
-                    alert('Có lỗi xảy ra khi xóa nhóm đối tượng');
+                    alert(error.message);
                 }
             }
         }
@@ -374,6 +448,27 @@
 
         // Initialize page
         document.addEventListener('DOMContentLoaded', loadTargetAudiences);
+
+        function addUrlInput() {
+            const urlGroup = document.querySelector('.url-group');
+            const newInput = document.createElement('div');
+            newInput.className = 'url-input-group';
+            newInput.innerHTML = `
+                <select class="condition-select">
+                    <option value="and">Và</option>
+                    <option value="or">Hoặc</option>
+                </select>
+                <input type="text" class="form-input" placeholder="Nhập URL trang web">
+                <button class="btn-remove" onclick="removeUrlInput(this)">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            urlGroup.appendChild(newInput);
+        }
+
+        function removeUrlInput(button) {
+            button.closest('.url-input-group').remove();
+        }
     </script>
 </body>
 

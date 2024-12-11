@@ -8,6 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="./styles.css">
+    <script src="./js/auth.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -67,14 +68,37 @@
             font-size: 14px;
         }
 
-        .format-section {
-            margin-top: 24px;
+        .tab-container {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid #E0E0E0;
         }
 
-        .format-title {
-            font-size: 14px;
-            color: #333;
-            margin-bottom: 16px;
+        .tab {
+            padding: 12px 0;
+            color: #4F4F4F;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .tab.active {
+            color: #0061C1;
+            font-weight: 500;
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: #0061C1;
+        }
+
+        .format-section {
+            margin-top: 24px;
         }
 
         .format-grid {
@@ -87,13 +111,6 @@
             border: 1px solid #E0E0E0;
             padding: 12px;
             border-radius: 4px;
-        }
-
-        .format-item label {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
         }
 
         .backup-ads {
@@ -169,12 +186,6 @@
             font-weight: 500;
             margin-bottom: 12px;
             color: #333;
-        }
-
-        .format-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
         }
     </style>
 </head>
@@ -257,6 +268,10 @@
                     <a href="/frontend/ad-zones.html">• Danh sách vùng QC</a>
                 </div>
             </div>
+            <a href="/frontend/accounts.html" class="nav-item">
+                <i class="fas fa-user-shield"></i>
+                <span>Quản lý phân quyền</span>
+            </a>
         </nav>
     </div>
 
@@ -350,10 +365,35 @@
     <script src="./script.js"></script>
 
     <script>
-        document.getElementById('createAdZoneForm').addEventListener('submit', function (e) {
+        document.addEventListener('DOMContentLoaded', function() {
+            requireAuth();
+        });
+
+        document.getElementById('createAdZoneForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            // Xử lý logic submit form
-            alert('Đã tạo vùng quảng cáo thành công!');
+            try {
+                const formData = {
+                    // ... collect form data
+                };
+                
+                const response = await fetchWithAuth(`${baseUrl}/ad-zones`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Không thể tạo vùng quảng cáo');
+                }
+                
+                alert('Đã tạo vùng quảng cáo thành công!');
+                window.location.href = '/frontend/ad-zones.html';
+            } catch (error) {
+                console.error('Error:', error);
+                alert(error.message);
+            }
         });
 
         document.getElementById('backupAds').addEventListener('change', function () {
@@ -400,10 +440,10 @@
             }
         };
 
-        document.getElementById('adSize').addEventListener('change', function() {
+        document.getElementById('adSize').addEventListener('change', function () {
             const selectedSize = this.value;
             const formatContainer = document.getElementById('formatContainer');
-            
+
             // Reset all format groups
             document.querySelectorAll('.format-group').forEach(group => {
                 group.style.display = 'none';
@@ -423,7 +463,7 @@
 
                 groupElement.style.display = 'block';
                 const gridElement = groupElement.querySelector('.format-grid');
-                
+
                 items.forEach(format => {
                     const formatItem = document.createElement('div');
                     formatItem.className = 'format-item';
